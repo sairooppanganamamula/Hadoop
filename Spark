@@ -1,0 +1,341 @@
+Spark
+Apache Spark is a powerful open-source processing engine built around speed, ease of use, and sophisticated analytics.
+It is a cluster computing platform built on top of storage layer and extends MR with support for streaming and interactive analysis.
+
+RDD(Resilient Distributed Datasets)
+They are nothing but fault tolerant collection of elements that can be operated in parallel. Resilient means fault tolerant,
+ditributed means stored across multiple nodes, dataset means collection of partitioned data. They can be created in 2 ways:
+1) Parallelizing an existing collection:
+   Parallelized collections are created by calling SparkContext�s parallelize method on an existing collection in your driver program.
+   For example, here is how to create a parallelized collection holding the numbers 1 to 5:
+   val data = Array(1,2,3,4,5)
+   val distData = sc.parallelize(data)
+ 
+2) External Datasets: 
+   Spark can create distributed datasets from any storage source supported by Hadoop, including your local file system, HDFS, Cassandra, HBase etc.
+   Text file RDDs can be created using SparkContext�s textFile method.
+   val distFile = sc.textFile("data.txt")
+   
+Algorithm and Spark Code to calculate the value of Pi:
+
+Generate N Samples:
+val NUM_SAMPLES = 1000000
+val samplesRDD = sc.parallelize(1 to NUM_SAMPLES).map(i=>(Math.random,Math.random))  
+
+Determine Sample location and code:
+val M = samplesRDD.filter(x=>(x._1*x._1+x._2*x._2<1)).count
+
+Finally
+println("Pi value is roughly " +(4.0*M)/NUM_SAMPLES)
+
+Dataframe
+Distributed collection on data organized into named columns. Can be constructed by tranforming existing dataframe or via files in storage system.
+Supports a wide array of data formats and storage systems.
+
+Datasets:
+They are the primary abstraction in Spark. They are collection of objects distributed across nodes in a cluster on which data operations are performed.
+They are immutable, fault tolerant and use catalyst optimizer.
+
+Spark Architecture
+Spark Architecture basically consists of a driver program which is SparkContext object and worker node which has executors and tasks.
+To run on a cluster, SparkContext can connect to several types of cluster managers, which allocates resources.
+Once connected, Spark acquires the executors on the nodes in a cluster. Executors are processes that store data for our application.
+Next, it sends application code to executors and finally, SparkContext sends tasks to executors to run.
+Driver Program must always listen and accept new connections. 
+
+10/24/2018
+
+Spark Dataframe
+Loading a dataframe
+We can start a spark session by the following command
+spark2-shell --master yarn
+
+To create a dataframe from a json file located on HDFS
+val df = spark.read.json("path")
+
+To create a dataframe from a csv file located on HDFS
+val df = spark.read.csv("path")
+
+To create a dataframe from a avro file located on HDFS
+val df = spark.read.avro("path")
+
+To create a dataframe from a parquet file located on HDFS
+val df = spark.read.parquet("path")
+
+To create a dataframe from a xml file located on HDFS
+val df = spark.read.xml("path")
+
+Reading from Hive
+First, create sqlContext object.
+val sqlContext = new org.apache.spark.sql.hive.HiveContext(sc)
+
+Next, create a table using HiveQl
+sqlContext.sql("CREATE TABLE IF NOT EXISTS EMPLOYEE(ID INT, NAME STRING, AGE INT) ROW FORMAT DELIMITED  FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n\'")
+
+Load data into it
+sqlContext.sql("load data local inpath "path" into table employee")
+
+Selecting fields from table
+val df = sqlContext.sql(FROM EMPLOYEE SELECT NAME, AGE, INT)
+
+To display the data we can use show
+df.show
+
+Basic dataframe functions
+a) cache: It does MEMORY_AND_DISK by default.
+val df = spark.read.json("path").cache()
+
+b) persist: Similar to cache but with more arguments.
+val df = spark.read.json("path").persist()
+Persist can take the following arguments.
+MEMORY_ONLY
+
+MEMORY_ONLY_SER
+
+MEMORY_AND_DISK
+
+MEMORY_AND_DISK_SER  
+
+
+To return column names in a dataframe
+df.columns
+
+To return column names and data types in dataframe
+df.dtypes
+
+To print schema
+df.printSchema
+
+To mark the dataframe as unpersist and remove all blocks from its memory and disk
+df.unpersist
+
+To return first n rows 
+df.select(sepal_length,petal_width).take(5)
+
+To display the dataframe in a tabular form
+df.show
+
+To return the first row
+df.first
+df.head
+
+Language Integrated Queries
+To select a column or a set of columns
+df.select("sepal_length")
+df.select("sepal_length","petal_width")
+
+Filtering rows
+df.select("sepal_width").filter(petal_width > 0.2)
+df.select("sepal_length","petal_width").filter("species like v%")
+df.select("sepal_length","petal_width").filter("species like v%").filter(petal_length > 3.0)
+
+groupBy
+df.groupBy("sepal_length").count 
+df.groupBy("petal_width","species").count.filter("count > 10")
+
+map
+x = sc.parallelize(["a", "b", "c"])
+y = x.map(z => (z,1))
+println(x.collect().mkString(",")) // x: ['a', 'b', 'c']
+println(y.collect().mkString(",")) // y: [('a',1),('b',1),('c',1)]
+
+filter
+val x = sc.parallelize(Array(1,2,3)) 
+val y = x.filter(n => n%2 == 1) 
+println(x.collect().mkString(", ")) // x: (1,2,3)
+println(y.collect().mkString(", ")) // y: (1,3)
+
+flatMap
+val x = sc.parallelize(Array(1,2,3)) 
+val y = x.flatMap(n => Array(n, n*100, 42))
+println(x.collect().mkString(", ")) // x = (1,2,3) 
+println(y.collect().mkString(", ")) // y = (1,100,42,2,200,42,3,300,42)
+
+groupBy
+val x = sc.parallelize( Array("John", "Fred", "Anna", "James"))
+val y = x.groupBy(w => w.charAt(0))
+println(y.collect().mkString(", ")) // y = ('A', ('Anna'), 'J', ('John','James'), 'F',('Fred'))
+
+groupByKey
+val x = sc.parallelize( Array(('B',5),('B',4),('A',3),('A',2),('A',1)))
+val y = x.groupByKey() println(x.collect().mkString(", ")) 
+println(y.collect().mkString(", ")) // y: ('A',(1,2,3), 'B',(3,4))
+
+coalesce
+val x = sc.parallelize(Array(1, 2, 3, 4, 5), 3)
+val y = x.coalesce(2) 
+val xOut = x.glom().collect() // x: ((1),(2,3),(4,5))
+val yOut = y.glom().collect() // y: ((1),(2,3,4,5))
+
+zip
+val x = sc.parallelize(Array(1,2,3)) //x : (1,2,3)
+val y = x.map(n=>n*n)                // y: (1,4,9)
+val z = x.zip(y)                         
+println(z.collect().mkString(", "))  // z: ((1,1),(2,4),(3,9))
+
+max
+val x = sc.parallelize(Array(1,2,3,4))
+val y = x.max
+println(y) // 4
+ 
+min
+val x = sc.parallelize(Array(1,2,3,4))
+val y = x.min
+println(y) // 1
+
+sum
+val x = sc.parallelize(Array(1,2,3,4))
+val y = x.sum
+println(y) // 10
+
+10/25/2018
+orderBy
+df.groupBy("sepal_length").count.filter("count > 10").orderBy("count") //orders by ascending order by default
+df.groupBy("sepal_length").count.filter("count > 10").orderBy(desc("count")) //orders by descending order
+
+distinct
+df.select("petal_width").distinct
+
+drop
+df.drop("species").columns
+
+where
+df.select("sepal_width","petal_width").where("sepal_length > 3.0")
+
+dropDuplicates
+df.dropDuplicates(Seq("sepal_length","petal_width"))
+
+sort
+df.sort(desc("sepal_length")) //sorts in descending order
+df.sort(asc("sepal_length")) //sorts in ascending order
+
+limit
+df.select("*").limit(10) //returns first 10 rows
+df.select("*").limit(20) //returns first 20 rows
+
+repartition
+Returns a dataframe that has exactly numPartitions partitions.
+df.repartition(5)
+
+Performing SQL operations
+registering a temp table
+df.registerTempTable("sai")
+
+Querying
+spark.sql("select * from sai")
+spark.sql("select sepal_length from sai where petal_width > 2.5")
+
+Output Operations
+Write: Interface for saving the content of the dataframe out into external storage.
+Save: Saves the content of the dataframe based on the given data source.
+
+Csv format
+df.write.format("csv").save("examplecsv.csv")
+
+Avro format
+df.write.format("avro").save("exavro.avro")
+
+Json format
+df.write.format("json").save("exjson.json")
+
+Parquet format
+df.write.format("parquet").save("exparquet.parquet")
+
+Xml format
+df.write.format("xml").save("examplexml.xml")
+
+DAG(Directed Acyclic Graph)
+- It is a finite directed graph with no direct cycles which has many vertices and edges.
+- The RDDs are represented by vertices and the operation that will be performed on them will be represented by edges.
+- On calling of Action, the created DAG is submitted to the DAG scheduler.
+ 
+Working Of DAG
+- The interpreter is the first layer, using a Scala interpreter, Spark interprets the code with some modifications.
+- Spark creates an operator graph when you enter your code in Spark console.
+- When an Action is called on Spark RDD at a high level, Spark submits the operator graph to the DAG Scheduler.
+- Operators are divided into stages of the task in the DAG Scheduler. A stage contains task based on the partition of the input data.
+- The stages are passed on to the Task Scheduler. It launches task through cluster manager. 
+- The Workers execute the task on the slave.
+
+10/26/2018
+Creating a dataset
+- First create a case class.
+ case class Csv(sepal_length: String, sepal_width: String, petal_length:String, petal_width:String, species:String)
+
+- Next create a dataset by reading data from a file and using .as[T] (T is the case class)
+  val ds = spark.read.option("header","true").csv("/user/spanganamamula/iris.csv").as[Csv] 
+  
+Printing schema
+ ds.printSchema
+ 
+To view the dataset
+ ds.show
+
+To show first 50 rows
+ ds.show(50)
+ 
+Counting number of records in a column
+ ds.select("sepal_length").count
+ 
+Creating a temp view
+ ds.createOrReplaceTempView("sql")
+ 
+Performing SQL operations on our dataset
+ val res = spark.sql("SELECT * FROM sql")
+ res.show
+ 
+Filtering the records
+ val res1 = ds.filter(d => d.sepal_length > "5.0")
+ res1.show
+
+Performing joins
+We can specify a join condition (aka join expression) as part of join operators or using where or filter operators.
+df1.join(df2, $"df1Key" === $"df2Key")
+df1.join(df2).where($"df1Key" === $"df2Key")
+df1.join(df2).filter($"df1Key" === $"df2Key")
+
+val left = Seq((0, "zero"), (1, "one")).toDF("id", "left")
+val right = Seq((0, "zero"), (2, "two"), (3, "three")).toDF("id", "right")
+
+left.join(right, "id").show //inner join
+
+left.join(right, Seq("id"), "fullouter").show //full outer
+
+left.join(right, Seq("id"), "leftanti").show //left anti
+ 
+Let us create two case classes, create instances for them, convert into dataset and join them.
+
+case class Person(id: Long, name: String, cityId: Long)
+case class City(id: Long, name: String)
+val family = Seq(
+  Person(0, "Agata", 0),
+  Person(1, "Iweta", 0),
+  Person(2, "Patryk", 2),
+  Person(3, "Maksym", 0)).toDS
+val cities = Seq(
+  City(0, "Warsaw"),
+  City(1, "Washington"),
+  City(2, "Sopot")).toDS
+
+val joined = family.joinWith(cities, family("cityId") === cities("id"))
+
+StructType
+- Built in datatype that is a collection of StructFields.
+- Used to define schema or its part.
+
+val schemaUntyped = new StructType()
+  .add("a", "int")
+  .add("b", "string")
+
+StructField
+- Defines a single field in a StructType.
+- It has a name, the type and whether or not it be empty.
+
+UserDefinedFunctions(UDFs)
+- They represent a user-defined function and is created when :
+* udf function is executed.
+* UDFRegistration is requested to register a user defined scala function.
+
+import org.apache.spark.sql.functions.udf
+val lengthUDF = udf { s:String => s.length }
+lengthUDF($"name")
