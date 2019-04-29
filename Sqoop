@@ -1,0 +1,61 @@
+Sqoop
+Apache Sqoop is a tool designed for efficiently transferring data from RDBS to HDFS and vice versa.
+
+CREATE DATABASE
+ create database development;
+
+CREATE TABLE
+create table test1(id int, name varchar(10), contact int);
+
+INSERT DATA INTO TABLE
+insert into test1 values(1, ‘SAI’, 4456);
+insert into test1 values(2, ‘JOHN’, 4356);
+insert into test1 values(1, ‘MIKE’, 4455);
+
+SQOOP COMMANDS
+LIST ALL DATABASES 
+sqoop list-databases --connect jdbc:mysql://yboledge01.yotabites.com:3306/development --username dev --password Test1234
+
+IMPORT TABLE test1
+sqoop import --connect jdbc:mysql://yboledge01.yotabites.com:3306/development --username dev --password Test1234 --m 1 --table test1 --target-dir '/user/spanganamamula/sqoopout'
+
+LIST-TABLES
+
+sqoop list-tables --connect jdbc:mysql://yboledge01.yotabites.com:3306/development --username dev --password Test1234
+
+QUERY
+
+sqoop eval --connect jdbc:mysql://yboledge01.yotabites.com:3306/development --username dev --password Test1234 --query "Select * from test1 limit 2"
+
+WHERE
+
+sqoop import --connect jdbc:mysql://yboledge01.yotabites.com:3306/development --username dev --password Test1234 --m 1 --table test1 where "id=1" --target-dir ‘/user/spanganamamula/whereout’
+
+as-avrodatafile
+
+sqoop import --connect jdbc:mysql://yboledge01.yotabites.com:3306/development --username dev --password Test1234 -m 1  --table iris_test_spanganamamula --as-avrodatafile --target-dir /user/spanganamamula/iris_sqoop_sample_test_parquet
+
+SQOOP EXPORT
+
+sqoop export --connect jdbc:mysql://yboledge01.yotabites.com:3306/development --username dev --password Test1234 -m 1 --table iris_test_spanganamamula --export-dir /user/spanganamamula/iris.csv
+
+SQOOP JOB
+
+sqoop job --create myjob --import --connect jdbc:mysql://yboledge01.yotabites.com:3306/development --table test1
+
+IMPORT-ALL-TABLES
+
+sqoop import-all-tables --connect jdbc:mysql://yboledge01.yotabites.com:3306/development
+
+CREATE HIVE TABLE
+
+sqoop create-hive-table --connect jdbc:mysql://yboledge01.yotabites.com:3306/development \
+    --table test1 --hive-table test
+
+INCREMENTAL IMPORT
+
+sqoop import --connect jdbc:mysql://yboledge01.yotabites.com:3306/development\
+--username dev\
+--password Test1234 -m 1  --table acad\
+--target-dir /user/spanganamamula/mydata1\
+--incremental append --check-column empId --last-value 7 
